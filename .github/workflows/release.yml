@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write # to be able to publish a GitHub release
+  issues: write # to be able to comment on released issues
+  pull-requests: write # to be able to comment on released pull requests
+  id-token: write # to enable use of OIDC for npm provenance
+
+jobs:
+  build_and_release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout Repository
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+      - name: Install Dependencies
+        run: npm clean-install
+      - name: Audit Signatures
+        run: npm audit signatures
+      - name: Lint package
+        run: npm run lint
+      - name: Run unit tests
+        run: npm test
+      - name: Build package
+        run: npm run build
+      - name: Release package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
